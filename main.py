@@ -4,20 +4,41 @@
 # import gevent.monkey
 # gevent.monkey.patch_all(ssl=False)
 import argparse
+import os
 import time
-import ujson as json
 import warnings
-warnings.filterwarnings("ignore")
+from itertools import count
 
+import ujson as json
+from dotenv import find_dotenv, load_dotenv
 from loguru import logger
+
 from bot import BinanceTradeBot
 from utils import str2bool
+
+load_dotenv(find_dotenv())
+
+warnings.filterwarnings("ignore")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test", type=str2bool, nargs='?', const=True, default=False, help="Use test-net or main-net.")
-    parser.add_argument("--proxy", type=str2bool, nargs='?', const=True, default=False, help="Use proxy.")
+    parser.add_argument(
+        "--test",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Use test-net or main-net.",
+    )
+    parser.add_argument(
+        "--proxy",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Use proxy.",
+    )
     args = parser.parse_args()
     use_test_net = args.test
     use_proxy = args.proxy
@@ -26,20 +47,29 @@ if __name__ == "__main__":
     if use_test_net:
         ak = os.getenv("BINANCE_TEST_NET_API_KEY")
         sk = os.getenv("BINANCE_TEST_NET_SECRET_KEY")
-        if ak == None or ak == "" or sk == None or sk == "" :
-            logger.critical("please provide BINANCE_TEST_NET_API_KEY and BINANCE_TEST_NET_SECRET_KEY first")
+        if ak == None or ak == "" or sk == None or sk == "":
+            logger.critical(
+                "please provide BINANCE_TEST_NET_API_KEY and BINANCE_TEST_NET_SECRET_KEY first"
+            )
     else:
         ak = os.getenv("BINANCE_MAIN_NET_API_KEY")
         sk = os.getenv("BINANCE_MAIN_NET_SECRET_KEY")
-        if ak == None or ak == "" or sk == None or sk == "" :
-            logger.critical("please provide BINANCE_MAIN_NET_API_KEY and BINANCE_MAIN_NET_SECRET_KEY first")        
+        if ak == None or ak == "" or sk == None or sk == "":
+            logger.critical(
+                "please provide BINANCE_MAIN_NET_API_KEY and BINANCE_MAIN_NET_SECRET_KEY first"
+            )
 
     proxies = {}
     http_proxy, https_proxy = "", ""
     if use_proxy:
         http_proxy = os.getenv("HTTP_PROXY")
         https_proxy = os.getenv("HTTPS_PROXY")
-        if http_proxy == None or http_proxy == "" or https_proxy == None or https_proxy == "":
+        if (
+            http_proxy == None
+            or http_proxy == ""
+            or https_proxy == None
+            or https_proxy == ""
+        ):
             logger.critical("please provide HTTP_PROXY and HTTPS_PROXY first")
     if http_proxy != "" and https_proxy != "":
         proxies["http"] = http_proxy
@@ -49,7 +79,7 @@ if __name__ == "__main__":
     while not bot.is_ready():
         logger.info("... ... ...")
         time.sleep(2)
-    
+
     fr = open("coin_dict.json", "r")
     coin_dict = json.load(fr)
     fr.close()
@@ -67,4 +97,4 @@ if __name__ == "__main__":
         logger.info("SELL CHECKS:")
         bot.sell(compiled_sentiment, analysed_headlines)
         logger.info("Iteration {}".format(i))
-        time.sleep(600)
+        time.sleep(60)
